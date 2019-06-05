@@ -1,2 +1,2 @@
-# my-gen
+# my genetics readers (dev)
 Tinkering for genetics analysis
