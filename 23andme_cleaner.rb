@@ -1,4 +1,9 @@
-# for cleaning some 23andme data
+# input is the raw file from 23andme
+# this will retrieve the gene name from the rsID
+# and export for gene names that are found in the list
+
+# https://github.com/omarcodex
+
 require 'csv'
 require 'net/http'
 require 'nokogiri'
@@ -8,7 +13,15 @@ if ARGV[1] && ARGV[1] == '--ripgenes'
     ripgenes = true
 end
 
-exports = Hash.new
+immune_genes_dict = [
+          "ATXN2",
+          "CCR5",
+          "SH2B3",
+          "HLA-A",
+          "HLA-B",
+        ]
+
+summary = Hash.new
 headers = ["snpID","chromosome","position","genotype","gene name"]
 
 File.open(infile, 'r') do |file|
@@ -18,36 +31,38 @@ File.open(infile, 'r') do |file|
             if genotype.match(/\r\n/) # perform first-pass cleanup
                 genotype.gsub!(/\r\n/,"")
             end
-            exports[rsid] = [chrom, position, genotype]
+            summary[rsid] = [chrom, position, genotype]
         end
     end
 end
 
+exports = Hash.new
 if ripgenes
     count = 0
-    exports.each do |name, infos|
+    summary.each do |name, infos|
         next unless name.match(/^rs/)
-        puts "looking at! #{name}....#{infos}"
         break if count >= 100
         url = "https://www.ncbi.nlm.nih.gov/snp/#{name.strip}"
         raw_page = Net::HTTP.get(URI.parse(url))
         raw_page_nokogiri = Nokogiri::HTML(raw_page)
         genename = raw_page_nokogiri.css('.sect_heading')[1].css('a').text # note this may change
         if genename
-            puts "got one!"
-            puts genename
-            infos.push(genename)
             count += 1
+            if immune_genes_dict.include?(genename)
+              infos.push(genename)
+              exports.merge!({ name => infos })
+            end
         end
     end
 end
 
 outfile = "#{infile}_as-csv.csv"
+
 CSV.open(outfile, 'w') do |csv|
     csv << headers
     exports.each do |key, array|
         csv << [key.to_s] + array
     end
 end
-puts 'k thanks, bye!'
+puts "Done..."
 exit
