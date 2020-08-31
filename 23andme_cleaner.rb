@@ -13,6 +13,10 @@ if ARGV[1] && ARGV[1] == '--ripgenes'
     ripgenes = true
 end
 
+if ARGV.include?("--immune")
+  immune_filter = true
+end
+
 immune_genes_dict = [
           "ATXN2",
           "CCR5",
@@ -20,6 +24,7 @@ immune_genes_dict = [
           "HLA-A",
           "HLA-B",
         ]
+
 
 summary = Hash.new
 headers = ["snpID","chromosome","position","genotype","gene name"]
@@ -41,17 +46,17 @@ if ripgenes
     count = 0
     summary.each do |name, infos|
         next unless name.match(/^rs/)
-        break if count >= 100
+        break if count >= 10 # demo
         url = "https://www.ncbi.nlm.nih.gov/snp/#{name.strip}"
         raw_page = Net::HTTP.get(URI.parse(url))
         raw_page_nokogiri = Nokogiri::HTML(raw_page)
         genename = raw_page_nokogiri.css('.sect_heading')[1].css('a').text # note this may change
         if genename
             count += 1
-            if immune_genes_dict.include?(genename)
-              infos.push(genename)
-              exports.merge!({ name => infos })
+            unless (immune_filter && !immune_genes_dict.include?(genename))
+                infos.push(genename)
             end
+            exports.merge!({ name => infos })
         end
     end
 end
