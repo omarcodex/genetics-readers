@@ -7,6 +7,7 @@ class Gene
     @locked = true
   end
   def express
+    puts "expressing #{@expression}..." unless locked
     @expression unless locked
   end
 end
@@ -20,6 +21,7 @@ class ProteinComplex
   end
 
   def gobble_protein(p)
+    puts "gobbling #{p} into #{protein_template}...."
     if protein_template.key(p)
 
       protein_complex[protein_template.key(p)] = p
@@ -32,7 +34,7 @@ class ProteinComplex
   end
 end
 
-a = ProteinComplex.new("hemoglobin-ish", {0=>"alpha-globin", 1=>"beta-globin"})
+a = ProteinComplex.new("hemoglobin-ish", {0=>"alpha-globin", 1=>"beta-globin", 2=>"delta-globin", 3=>"quattro-goblin"})
 
 x = Gene.new("alpha-globin")
 y = Gene.new("beta-globin")
@@ -41,7 +43,11 @@ z = Gene.new("delta-globin")
 puts "#{a.name} has the protein template: #{a.protein_template}. Can you fill it in?\n"
 
 20.times do
-  puts ["Available genes and their coiled status (type number to turn on/off):", "1 - #{x.expression}:#{x.locked}", "2 - #{y.expression}:#{y.locked}", "3 - #{z.expression}:#{z.locked}", "\n"]
+  puts
+  "Available genes and their coiled status (type number to turn on/off):"
+  [x,y,z].each do |gene|
+    puts "#{gene.expression}: #{gene.locked ? 'locked' : 'reading' }"
+  end
   u = gets.chomp
 
   dict = {
@@ -49,6 +55,7 @@ puts "#{a.name} has the protein template: #{a.protein_template}. Can you fill it
     "2" => y,
     "3" => z
   }
+
   if dict[u]
     dict[u].locked = !dict[u].locked
   else
@@ -56,7 +63,7 @@ puts "#{a.name} has the protein template: #{a.protein_template}. Can you fill it
   end
 
   [x,y,z].each do |g|
-    puts "#{g.expression}:#{g.locked}"
+    puts "gobbling protein..."
     if a.gobble_protein(g.express)
       puts "#{a.name} has the proteins...#{a.protein_complex}"
       puts "#{a.name} complete! Goodbye"
